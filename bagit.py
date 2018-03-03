@@ -1345,6 +1345,10 @@ def _make_parser():
                         help=_('Modify --validate behaviour to test whether the bag directory'
                                ' has the expected payload specified in the checksum manifests'
                                ' without performing checksum validation to detect corruption.'))
+    parser.add_argument('--update', action='store_true',
+                        help=_('Update the manifests and (if it exists) the bag-info.txt of existing bags'))
+    parser.add_argument('--updatetagmanifests', action='store_true',
+                        help=_('Update the tag manifests of existing bags'))
 
     checksum_args = parser.add_argument_group(
         _('Checksum Algorithms'),
@@ -1418,6 +1422,28 @@ def main():
             except BagError as e:
                 LOGGER.error(_("%(bag)s is invalid: %(error)s"),
                              {'bag': bag_dir, 'error': e})
+                rc = 1
+
+        # update manifests and, if applicable, Payload-Oxum
+        elif args.update:
+            try:
+                bag = Bag(bag_dir)
+                bag.save(processes=args.processes, manifests=True)
+            except Exception as exc:
+                LOGGER.error(_("Failed to update tag manifests in %(bag_directory)s: %(error)s"),
+                             {'bag_directory': bag_dir, 'error': exc},
+                             exc_info=True)
+                rc = 1
+
+        # update tag manifests only
+        elif args.updatetagmanifests:
+            try:
+                bag = Bag(bag_dir)
+                bag.save(processes=args.processes)
+            except Exception as exc:
+                LOGGER.error(_("Failed to update tag manifests in %(bag_directory)s: %(error)s"),
+                             {'bag_directory': bag_dir, 'error': exc},
+                             exc_info=True)
                 rc = 1
 
         # make the bag
